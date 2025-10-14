@@ -25,11 +25,50 @@ public class DogApiBreedFetcher implements BreedFetcher {
      */
     @Override
     public List<String> getSubBreeds(String breed) {
-        // TODO Task 1: Complete this method based on its provided documentation
-        //      and the documentation for the dog.ceo API. You may find it helpful
-        //      to refer to the examples of using OkHttpClient from the last lab,
-        //      as well as the code for parsing JSON responses.
-        // return statement included so that the starter code can compile and run.
-        return new ArrayList<>();
+        // Construct the API endpoint URL for fetching sub-breeds
+        String url = "https://dog.ceo/api/breed/" + breed.toLowerCase() + "/list";
+
+        // Build the HTTP request
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+
+        try {
+            // Execute the request and get the response
+            Response response = client.newCall(request).execute();
+
+            // Check if the response was successful
+            if (!response.isSuccessful()) {
+                throw new BreedNotFoundException(breed);
+            }
+
+            // Parse the JSON response body
+            String responseBody = response.body().string();
+            JSONObject json = new JSONObject(responseBody);
+
+            // Check the status field in the response
+            String status = json.getString("status");
+            if (!status.equals("success")) {
+                throw new BreedNotFoundException(breed);
+            }
+
+            // Extract the "message" field which contains the array of sub-breeds
+            JSONArray subBreedsArray = json.getJSONArray("message");
+
+            // Convert JSONArray to List<String>
+            List<String> subBreeds = new ArrayList<>();
+            for (int i = 0; i < subBreedsArray.length(); i++) {
+                subBreeds.add(subBreedsArray.getString(i));
+            }
+
+            return subBreeds;
+
+        } catch (IOException e) {
+            // If any IO exception occurs, wrap it as BreedNotFoundException
+            throw new BreedNotFoundException(breed);
+        } catch (Exception e) {
+            // Catch any other exceptions (e.g., JSON parsing errors)
+            throw new BreedNotFoundException(breed);
+        }
     }
 }
